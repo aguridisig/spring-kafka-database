@@ -2,7 +2,7 @@ version: '3.7'
 services:
   prometheus:
     image: prom/prometheus:v2.35.0
-    network_mode: host
+    #network_mode: host
     container_name: prometheus
     restart: unless-stopped
     volumes:
@@ -60,6 +60,7 @@ services:
 
   mysql:
     image: mysql:8.0.30
+    container_name: mysql
     ports:
       - "3306:3306"
     environment:
@@ -69,7 +70,7 @@ services:
   grafana:
     image: grafana/grafana-oss:8.5.2
     pull_policy: always
-    network_mode: host
+    #network_mode: host
     container_name: grafana
     restart: unless-stopped
     user: root
@@ -81,3 +82,30 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_DOMAIN=localhost
+  spring-kafka-database:
+    container_name: spring-kafka-database
+    build:
+      #context:
+      dockerfile: Dockerfile
+    image: spring-kafka-database:latest
+    depends_on:
+      - mysql
+      - kafka
+    ports:
+      - 8080:8080
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/test
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secret
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration
+      - SPRING_FLYWAY_URL=jdbc:mysql://mysql:3306/test
+      - SPRING_FLYWAY_USER=root
+      - SPRING_FLYWAY_PASSWORD=secret
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_CONSUMER_GROUP_ID=group_id
+      - SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET=earliest
+      - SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER=org.apache.kafka.common.serialization.StringDeserializer
+      - SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER=org.springframework.kafka.support.serializer.JsonDeserializer
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_VALUE_DEFAULT_TYPE=com.example.springkafkadatabase.dto.UserDTO
+      - SPRING_KAFKA_CONSUMER_LEVEL.CONCURRENCY=5
+      - MANAGEMENT.ENDPOINTS.WEB.EXPOSURE.INCLUDE=*
