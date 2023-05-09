@@ -77,12 +77,15 @@ public class UserController
     @ResponseStatus( HttpStatus.OK )
     @Operation( summary = "Find all users from database",
             description = "Returns a list of all users" )
-    public List<UserDTO> getAllUsers(  @RequestParam(defaultValue = "0") Integer page,
-                                       @RequestParam(defaultValue = "10") Integer pageSize)
+    public Page<UserDTO> getAllUsers(  @RequestParam(defaultValue = "0") Integer page,
+                                       @RequestParam(defaultValue = "10") Integer pageSize,
+                                       @RequestParam(defaultValue = "firstName") String sortBy)
     {
-        final List<User> users = userService.getAllUsers(page,pageSize);
-        log.info( "Total of users: "+users.size() );
-        return users.stream().map( user -> new UserDTO( user.getId(), user.getFirstName(), user.getLastName() ) )
-                .toList();
+        final Page<User> users = userService.getAllUsers(page,pageSize,sortBy);
+        log.info( "Total of users: "+users.getTotalElements()  );
+        /*List<User> usersList = users.getContent()
+        return usersList.stream().map( user -> new UserDTO( user.getId(), user.getFirstName(), user.getLastName() ) )
+                .toList();*/
+        return users.map( user -> new UserDTO( user.getId(), user.getFirstName(), user.getLastName() ) );
     }
 }

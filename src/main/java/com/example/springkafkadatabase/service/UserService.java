@@ -10,7 +10,7 @@ public interface UserService
 {
     void save( UserDTO user);
     List<User> getUsers( String firstName);
-    List<User> getAllUsers( Integer page, Integer pageSize);
+    Page<User> getAllUsers( Integer page, Integer pageSize, String sortBy);
 
 
 }

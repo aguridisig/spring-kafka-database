@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import com.example.springkafkadatabase.dto.UserDTO;
 import com.example.springkafkadatabase.entity.User;
@@ -42,11 +43,11 @@ public class UserServiceImpl implements UserService
     }
 
     @Override
-    public List<User> getAllUsers( final Integer page, final Integer pageSize )
+    public Page<User> getAllUsers( final Integer page, final Integer pageSize, final String sortBy )
     {
-        final Pageable pageable = PageRequest.of(page, pageSize);
+        final Pageable pageable = PageRequest.of(page, pageSize, Sort.by(sortBy).ascending());
         final Page<User> users = userPagingAndSortingRepository.findAll(pageable);
         log.info( "Getting all users paginated in "+ users.getTotalPages() + " pages" );
-        return users.getContent();
+        return users;
     }
 }
