@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,20 +46,22 @@ public class UserController
     @ResponseStatus( HttpStatus.OK )
     @Operation( summary = "Create a user",
             description = "Creates a random user and write it to Kafka which is consumed by the listener" )
-    public void generateRandomUser()
+    public ResponseEntity<Void> generateRandomUser()
     {
         kafkaProducer.writeToKafka(
                 new UserDTO( UUID.randomUUID().toString(), faker.name().firstName(), faker.name().lastName() ) );
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping( "/random-sync" )
     @ResponseStatus( HttpStatus.OK )
     @Operation( summary = "Create a user",
             description = "Creates a random user and write it to Kafka which is consumed by the listener" )
-    public void generateRandomUserBlock()
+    public ResponseEntity<Void> generateRandomUserBlock()
     {
         userService.save(
                 new UserDTO( UUID.randomUUID().toString(), faker.name().firstName(), faker.name().lastName() ) );
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping( "/{firstName}" )
@@ -77,15 +80,15 @@ public class UserController
     @ResponseStatus( HttpStatus.OK )
     @Operation( summary = "Find all users from database",
             description = "Returns a list of all users" )
-    public Page<UserDTO> getAllUsers(  @RequestParam(defaultValue = "0") Integer page,
+    public List<UserDTO> getAllUsers(  @RequestParam(defaultValue = "0") Integer page,
                                        @RequestParam(defaultValue = "10") Integer pageSize,
                                        @RequestParam(defaultValue = "firstName") String sortBy)
     {
         final Page<User> users = userService.getAllUsers(page,pageSize,sortBy);
         log.info( "Total of users: "+users.getTotalElements()  );
-        /*List<User> usersList = users.getContent()
+        List<User> usersList = users.getContent();
         return usersList.stream().map( user -> new UserDTO( user.getId(), user.getFirstName(), user.getLastName() ) )
-                .toList();*/
-        return users.map( user -> new UserDTO( user.getId(), user.getFirstName(), user.getLastName() ) );
+                .toList();
+        //return users.map( user -> new UserDTO( user.getId(), user.getFirstName(), user.getLastName() ) );
     }
 }
