@@ -1,13 +1,11 @@
 version: '3.7'
 services:
   wso2:
-    image: wso2/wso2am:4.0.0
-    container_name: wso2
+    image: wso2/wso2is:5.7.0
+    container_name: wso2is
     restart: unless-stopped
     ports:
       - 9443:9443
-      - 8280:8280
-      - 8243:8243
 
   prometheus:
     image: prom/prometheus:v2.35.0
