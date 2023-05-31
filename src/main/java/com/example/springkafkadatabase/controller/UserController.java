@@ -7,8 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Tag( name = "User", description = "User API" )
 @RequestMapping("/v1/users")
 @Slf4j
+@CrossOrigin(origins = "http://localhost:4200")
 //@RequiredArgsConstructor
 public class UserController
 {
@@ -44,13 +48,24 @@ public class UserController
 
     @GetMapping( "/random" )
     @ResponseStatus( HttpStatus.OK )
-    @Operation( summary = "Create a user",
+    @Operation( summary = "Create a user through Kafka",
             description = "Creates a random user and write it to Kafka which is consumed by the listener" )
     public ResponseEntity<Void> generateRandomUser()
     {
         kafkaProducer.writeToKafka(
                 new UserDTO( UUID.randomUUID().toString(), faker.name().firstName(), faker.name().lastName() ) );
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping( "/add" )
+    @ResponseStatus( HttpStatus.OK )
+    @Operation( summary = "Create a user through Kafka",
+            description = "Creates a user and write it to Kafka which is consumed by the listener" )
+    public ResponseEntity<UserDTO> generateUser( @RequestBody UserDTO userDTO )
+    {
+        userDTO.setUuid( UUID.randomUUID().toString() );
+        kafkaProducer.writeToKafka( userDTO );
+        return ResponseEntity.ok(userDTO);
     }
 
     @GetMapping( "/random-sync" )
@@ -66,7 +81,7 @@ public class UserController
 
     @GetMapping( "/{firstName}" )
     @ResponseStatus( HttpStatus.OK )
-    @Operation( summary = "Create a user",
+    @Operation( summary = "Retrieve users by name",
             description = "Returns a list of users that matchers the given name" )
     public List<UserDTO> getUsers( @PathVariable( name = "firstName" ) String name )
     {

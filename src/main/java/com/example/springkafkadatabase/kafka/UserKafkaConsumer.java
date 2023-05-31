@@ -1,7 +1,9 @@
 package com.example.springkafkadatabase.kafka;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +29,7 @@ public class UserKafkaConsumer
                                   @Header(KafkaHeaders.OFFSET) Long offset )
     {
         log.info( "Received a message contains a user information with id {}, from {} topic, " +
-                "{} partition, and {} offset", user.getUuid(), topic, partition, offset );
+                "{} partition, and {} offset. Database Consumer", user.getUuid(), topic, partition, offset );
         userService.save( user );
     }
 }

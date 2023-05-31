@@ -1,11 +1,19 @@
 version: '3.7'
 services:
   wso2:
-    image: wso2/wso2is:5.7.0
-    container_name: wso2is
+    #image: wso2/wso2is:5.7.0
+    #container_name: wso2is
+    #restart: unless-stopped
+      #ports:
+    #- 9443:9443
+
+    image: wso2/wso2am:4.0.0
+    container_name: wso2
     restart: unless-stopped
     ports:
       - 9443:9443
+      - 8280:8280
+      - 8243:8243
 
   prometheus:
     image: prom/prometheus:v2.35.0
@@ -65,6 +73,18 @@ services:
       test: "curl -f kafdrop:9000/actuator/health || exit 1"
       start_period: 30s
 
+  redpanda:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: redpanda
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - 8088:8080
+    environment:
+      KAFKA_BROKERS: kafka:29092
+
   mysql:
     image: mysql:8.0.30
     container_name: mysql
@@ -73,6 +93,12 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=secret
       - MYSQL_DATABASE=test
+  mail:
+    image: mailhog/mailhog
+    container_name: mail
+    ports:
+      - 2525:2025
+      - 8025:8025
 
   grafana:
     image: grafana/grafana-oss:8.5.2
@@ -113,6 +139,6 @@ services:
       - SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET=earliest
       - SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER=org.apache.kafka.common.serialization.StringDeserializer
       - SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER=org.springframework.kafka.support.serializer.JsonDeserializer
-      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_VALUE_DEFAULT_TYPE=com.example.springkafkadatabase.dto.UserDTO
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES=*
       - SPRING_KAFKA_CONSUMER_LEVEL.CONCURRENCY=5
       - MANAGEMENT.ENDPOINTS.WEB.EXPOSURE.INCLUDE=*
