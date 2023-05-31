@@ -1,0 +1,149 @@
+version: '3.7'
+services:
+  wso2:
+    #image: wso2/wso2is:5.7.0
+    #container_name: wso2is
+    #restart: unless-stopped
+      #ports:
+    #- 9443:9443
+
+    image: wso2/wso2am:4.0.0
+    container_name: wso2
+    restart: unless-stopped
+    ports:
+      - 9443:9443
+      - 8280:8280
+      - 8243:8243
+
+  prometheus:
+    image: prom/prometheus:v2.35.0
+    #network_mode: host
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./data/prometheus/config:/etc/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+    ports:
+      - 9090:9090
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: zookeeper
+    restart: unless-stopped
+    ports:
+      - 2181:2181
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    healthcheck:
+      test: "echo stat | nc localhost $ZOOKEEPER_CLIENT_PORT"
+      start_period: 20s
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_ADVERTISED_HOST_NAME:
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      start_period: 20s
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - 8085:9000
+    environment:
+      KAFKA_BROKERCONNECT: kafka:29092
+    healthcheck:
+      test: "curl -f kafdrop:9000/actuator/health || exit 1"
+      start_period: 30s
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: redpanda
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - 8088:8080
+    environment:
+      KAFKA_BROKERS: kafka:29092
+
+  mysql:
+    image: mysql:8.0.30
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=test
+  mail:
+    image: mailhog/mailhog
+    container_name: mail
+    ports:
+      - 2525:2025
+      - 8025:8025
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    pull_policy: always
+    #network_mode: host
+    container_name: grafana
+    restart: unless-stopped
+    user: root
+    ports:
+      - 3000:3000 # access grafana url
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=localhost
+  users-front:
+    container_name: users-front
+    build:
+      #context:
+      dockerfile: Dockerfile
+  spring-kafka-database:
+    container_name: spring-kafka-database
+    build:
+      #context:
+      dockerfile: Dockerfile
+    image: spring-kafka-database:latest
+    depends_on:
+      - mysql
+      - kafka
+    ports:
+      - 8080:8080
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/test
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secret
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration
+      - SPRING_FLYWAY_URL=jdbc:mysql://mysql:3306/test
+      - SPRING_FLYWAY_USER=root
+      - SPRING_FLYWAY_PASSWORD=secret
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_CONSUMER_GROUP_ID=group_id
+      - SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET=earliest
+      - SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER=org.apache.kafka.common.serialization.StringDeserializer
+      - SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER=org.springframework.kafka.support.serializer.JsonDeserializer
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES=*
+      - SPRING_KAFKA_CONSUMER_LEVEL.CONCURRENCY=5
+      - MANAGEMENT.ENDPOINTS.WEB.EXPOSURE.INCLUDE=*
