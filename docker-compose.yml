@@ -150,3 +150,37 @@ services:
       - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES=*
       - SPRING_KAFKA_CONSUMER_LEVEL.CONCURRENCY=5
       - MANAGEMENT.ENDPOINTS.WEB.EXPOSURE.INCLUDE=*
+  email-notification:
+    container_name: email-notification
+    build:
+      context: ./email-notification
+      dockerfile: Dockerfile
+    image: email-notification:latest
+    depends_on:
+      - kafka
+    ports:
+      - 8081:8081
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_TOPIC_NAME=com.example.kafka.user
+      - SPRING_KAFKA_CONSUMER_GROUP_ID=kafka-user-listener2-group_id
+      - SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET=earliest
+      - SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER=org.apache.kafka.common.serialization.StringDeserializer
+      - SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER=org.springframework.kafka.support.serializer.JsonDeserializer
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_TRUSTED_PACKAGES=*
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_VALUE_DEFAULT_TYPE=com.example.emailnotification.dto.UserDTO
+      - SPRING_KAFKA_CONSUMER_PROPERTIES_SPRING_JSON_USE_TYPE_HEADERS=false
+      - SPRING_KAFKA_CONSUMER_LEVEL.CONCURRENCY=5
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=*
+      - SPRING_MAIL_DEFAULT-ENCODING=UTF-8
+      - SPRING_MAIL_HOST=smtp.gmail.com
+      #do not commit the value
+      - SPRING_MAIL_USERNAME=${MAIL_USERNAME}
+      #do not commit the value
+      - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
+      - SPRING_MAIL_PORT=465
+      - SPRING_MAIL_PROTOCOL=smtp
+      - SPRING_MAIL_TEST-CONNECTION=false
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=true
