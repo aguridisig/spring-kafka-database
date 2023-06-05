@@ -19,6 +19,8 @@ http://localhost:9090
 http://localhost:3000 
 - WSO2 API Manager
 https://localhost:9443/publisher/apis/
+-  Angular
+http://localhost:4200
 
 ## Requirements
 To run the project, you need to have installed Docker and Docker Compose.
