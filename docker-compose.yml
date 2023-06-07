@@ -93,13 +93,13 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=secret
       - MYSQL_DATABASE=test
-  mail:
-    image: mailhog/mailhog
-    container_name: mail
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    container_name: smtp4dev
+    restart: unless-stopped
     ports:
-      - 2525:2025
-      - 8025:8025
-
+      - 5000:80
+      - 2525:25
   grafana:
     image: grafana/grafana-oss:8.5.2
     pull_policy: always
@@ -173,14 +173,12 @@ services:
       - SPRING_KAFKA_CONSUMER_LEVEL.CONCURRENCY=5
       - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=*
       - SPRING_MAIL_DEFAULT-ENCODING=UTF-8
-      - SPRING_MAIL_HOST=smtp.gmail.com
-      #do not commit the value
-      - SPRING_MAIL_USERNAME=${MAIL_USERNAME}
-      #do not commit the value
-      - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD}
-      - SPRING_MAIL_PORT=465
+      - SPRING_MAIL_HOST=smtp4dev
+      - SPRING_MAIL_USERNAME=test@example.com
+      - SPRING_MAIL_PASSWORD=secret
+      - SPRING_MAIL_PORT=25
       - SPRING_MAIL_PROTOCOL=smtp
-      - SPRING_MAIL_TEST-CONNECTION=false
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=true
+      - SPRING_MAIL_TEST-CONNECTION=true
+      #- SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+      #- SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=false
